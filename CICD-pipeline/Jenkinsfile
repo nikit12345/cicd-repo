@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    environment {
+        JAVA_HOME = 'C:/Program Files/Java/jdk-17'
+    }
+
+    stages {
+        stage('Maven build') {
+            steps {
+                script {
+                    checkout([$class: 'GitSCM', branches: [[name: 'master']], userRemoteConfigs: [[url: 'https://github.com/nikit12345/cicd-repo']]])
+                    bat "mvn clean install -f ${WORKSPACE}/CICD-pipeline/pom.xml"
+                }
+            }
+        }
+        
+        stage('Build Docker image') {
+            steps {
+                script {
+                    dir('C:/ProgramData/Jenkins/.jenkins/workspace/devopps-automation/CICD-pipeline') {
+                        bat 'docker build -t example/cicd .'
+                    }
+                }
+            }
+        }
+         stage('push docker image'){
+        steps{
+            script{
+        
+    withCredentials([string(credentialsId: 'dockerpwd', variable: 'pwd')]) {
+        bat "docker login -u nikitamane -p ${pwd}" // Use the 'password' variable here
+        bat "docker push nikitamane/example/cicd:latest" // Specify the full repository name including your Docker Hub username
+    }
+}
+
+}
+        }  
+    }
+}
